@@ -7,9 +7,16 @@ error_reporting(E_ALL);
     $wlan = new Wlan('wlanE');
 
     $devices = ConnectBase::GetDevices();
-    $usbOn = in_array('usb0', $devices);
+    $usbDevices = ConnectBase::GetUsbDevices();
+    $usbOn = (!empty($usbDevices));
+    $usb = array();
     if ($usbOn)
-	$usb = new UsbTethering('usb0');
+    {
+	foreach ($usbDevices as $usbDevice)
+	{
+	    $usb[$usbDevice] = new UsbTethering($usbDevice);
+	}
+    }
 
 ?>
 <!DOCTYPE html>
@@ -71,9 +78,16 @@ error_reporting(E_ALL);
 	<div>
 	    <button onclick="window.location.href = '?action=status'">Status</button>
 	    <button onclick="window.location.href = '?action=wlan'">WLAN Search</button>
-	    <?php if ($usbOn) { ?>
-	    <button onclick="window.location.href = '?action=usb-connect'">USB Connect</button>
-	    <?php } ?>
+	    <?php if ($usbOn)
+	    {
+		foreach ($usb as $name => $obj)
+		{
+		    ?>
+		    <button onclick="window.location.href = '?action=usb-connect&device=<?php print $name; ?>'">USB Connect (<?php print $name; ?>)</button>
+		    <?php
+		}
+	    }
+	    ?>
 	    <span class="devices">Devices: <?php print implode(", ", $devices); ?></span>
 	</div>
     </div>
@@ -154,7 +168,8 @@ error_reporting(E_ALL);
 		    break;
 		case 'usb-connect':
 		    ?><textarea class="console" readonly="readonly"><?php
-		    print $usb->Connect();
+		    if (!empty($usb[$_GET['device']]))
+			print $usb[$_GET['device']]->Connect();
 		    ?></textarea><?php
 		    break;
 	    }

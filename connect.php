@@ -56,6 +56,13 @@ abstract class ConnectBase
 		return $devices;
 	}
 
+	public static function GetUsbDevices()
+	{
+		$res = sh_exec("ls /sys/class/net | grep usb", false, false);
+		$devices = preg_split("/\s+/", $res, -1, PREG_SPLIT_NO_EMPTY);
+		return $devices;
+	}
+
 	public static function Status()
 	{
 		foreach (self::$Instances as $instance)
