@@ -63,14 +63,16 @@ abstract class ConnectBase
 			sh_exec("ifconfig " . $instance->Device);
 		}
 		sh_exec("route");
-		sh_exec("traceroute google.de");
+		sh_exec("traceroute google.com");
 		sh_exec("ping google.de -c 5");
 
 	}
 
 	protected function Disconnect()
 	{
-		sh_exec("ip route delete default");
+		print "Disconnect\n";
+		sh_exec('kill $(pgrep -f "dhclient")', false, false);
+		sh_exec("ip route delete default", false, false);
 		foreach (ConnectBase::$Instances as $instance)
 			$instance->InternalDisconnect();
 	}
@@ -103,8 +105,8 @@ class Wlan extends ConnectBase
 
 	protected function InternalDisconnect()
 	{
-		sh_exec('kill $(pgrep -f "wpa_supplicant")');
-		sh_exec("rm -r /var/run/wpa_supplicant/*");
+		sh_exec('kill $(pgrep -f "wpa_supplicant")', false, false);
+		sh_exec("rm -r /var/run/wpa_supplicant/*", false, false);
 	}
 
 	public function Scan()

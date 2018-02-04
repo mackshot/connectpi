@@ -21,6 +21,8 @@ error_reporting(E_ALL);
     <style>
 	body {
 	    margin: 0; padding: 0;
+	    background-color: #aaa;
+	    font-family: sans-serif;
 	}
 	table tr td {
 	    padding: 5px;
@@ -30,37 +32,42 @@ error_reporting(E_ALL);
 	}
 	textarea.console {
 	    background-color: #000;
-	    color: #fff;
 	    font-family: monospace;
 	    width: 100%;
 	    box-sizing: border-box;
+	    color: #fff;
 	}
-	div.menu, div.devices {
-	    padding: 20px;
+	div.menu, div.status, div.content {
+	    padding: 10px 10px 0 10px;
 	}
-	div.devices {
-	    background-color: #aaa;
+	div.menu, div.status {
+	    color: #fff;
 	}
-	div.menu {
-	    background-color: #ccc;
+	div.status {
+	    text-weight: bold;
+	}
+	table {
+	    background-color: #fff;
+	}
+	span.devices {
+	    font-size: 90%;
 	}
     </style>
 </head>
 
 <body>
 
-    <div class="devices">
-	Devices: <?php print implode(", ", $devices); ?>
-    </div>
-
+    <div class="status">Checking connection ...</div>
     <div class="menu">
-	<button onclick="window.location.href = '?action=status'">Status</button>
-	<button onclick="window.location.href = '?action=wlan'">WLAN Search</button>
-	<?php if ($usbOn) { ?>
-	<button onclick="window.location.href = '?action=usb-connect'">USB Connect</button>
-	<?php } ?>
+	<div>
+	    <button onclick="window.location.href = '?action=status'">Status</button>
+	    <button onclick="window.location.href = '?action=wlan'">WLAN Search</button>
+	    <?php if ($usbOn) { ?>
+	    <button onclick="window.location.href = '?action=usb-connect'">USB Connect</button>
+	    <?php } ?>
+	    <span class="devices">Devices: <?php print implode(", ", $devices); ?></span>
+	</div>
     </div>
-
     <div class="content">
 	<?php
 	    $action = '';
@@ -96,6 +103,7 @@ error_reporting(E_ALL);
 			    </tr>
 			<?php
 			$c = 0;
+			
 			foreach ($scanResult as $network)
 			{
 			    ?>
@@ -157,6 +165,31 @@ error_reporting(E_ALL);
 		$(el).css('height', 'auto').css('height', el.scrollHeight + offset);
 	    };
 	    resizeTextarea(this);
+	});
+
+	var $status;
+	var $body;
+
+	var updateStatus = function () {
+	    $.ajax({
+		url: "status.php",
+		dataType: "json",
+		success: function(data) {
+		    console.dir(data);
+		    if (data[0]) {
+			$body.css('background-color', 'darkgreen');
+		    } else {
+			$body.css('background-color', 'darkred');
+		    }
+		    $status.text(data[1]);
+		}
+	    });
+	}
+	$(function() {
+		$status = $(".status");
+		$body = $("body");
+		updateStatus();
+		setInterval(updateStatus, 10000);
 	});
     </script>
 
