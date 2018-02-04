@@ -21,7 +21,7 @@ error_reporting(E_ALL);
     <style>
 	body {
 	    margin: 0; padding: 0;
-	    background-color: #aaa;
+	    background-color: #666;
 	    font-family: sans-serif;
 	}
 	table tr td {
@@ -37,7 +37,7 @@ error_reporting(E_ALL);
 	    box-sizing: border-box;
 	    color: #fff;
 	}
-	div.menu, div.status, div.content {
+	div.menu, div.status, div.content, div.system {
 	    padding: 10px 10px 0 10px;
 	}
 	div.menu, div.status {
@@ -45,6 +45,9 @@ error_reporting(E_ALL);
 	}
 	div.status {
 	    text-weight: bold;
+	}
+	div.system {
+	    text-align: right;
 	}
 	table {
 	    background-color: #fff;
@@ -149,6 +152,10 @@ error_reporting(E_ALL);
 	    }
 	?>
     </div>
+    <div class="system">
+	    <button onclick="system('reboot')">Reboot</button>
+	    <button onclick="system('shutdown')">Shutdown</button>
+    </div>
 
     <script>
 	$('button.connect').on('click', function() {
@@ -175,16 +182,29 @@ error_reporting(E_ALL);
 		url: "status.php",
 		dataType: "json",
 		success: function(data) {
-		    console.dir(data);
 		    if (data[0]) {
 			$body.css('background-color', 'darkgreen');
 		    } else {
 			$body.css('background-color', 'darkred');
 		    }
 		    $status.text(data[1]);
+		},
+		error: function() {
+		    $status.text("No connection to connectpi");
+		    $body.css('background-color', 'darkviolet');
 		}
 	    });
 	}
+
+	var system = function(mode) {
+	    alert('Perform ' + mode);
+	    $.ajax({
+		url: "system.php",
+		data: { mode: mode },
+		method: "POST",
+	    });
+	}
+
 	$(function() {
 		$status = $(".status");
 		$body = $("body");
