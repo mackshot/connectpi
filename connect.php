@@ -6,6 +6,7 @@ class Network
 {
 	public $SSID;
 	public $Signal;
+	public $SignalRaw;
 	public $Freq;
 	public $Protocol;
 	public $Security;
@@ -14,10 +15,11 @@ class Network
 	public $Raw;
 	public $Mode;
 
-	public function __construct ($ssid, $signal, $freq, $protocol, $security, $speed, $channel, $raw)
+	public function __construct ($ssid, $signalRaw, $freq, $protocol, $security, $speed, $channel, $raw)
 	{
 		$this->SSID = $ssid;
-		$this->Signal = $signal;
+		$this->SignalRaw = $signalRaw;
+		$this->Signal = $signalRaw . "%";
 		$this->Freq = $freq;
 		$this->Protocol = $protocol;
 		$this->Security = $security;
@@ -132,7 +134,7 @@ class Wlan extends ConnectBase
 			$ssid = $matches[1];
 			$ssid = str_replace('\x00', '', $ssid);
 			preg_match("/\s+Signal level=(\d+)\/(\d+)/", $network, $matches);
-			$signal = (($matches[1]/$matches[2])*100) . "%";
+			$signal = (($matches[1]/$matches[2])*100);
 			preg_match("/\s+Protocol:IEEE (.*)\n/", $network, $matches);
 			$protocol = $matches[1];
 			preg_match("/\s+Frequency:(\d+.\d+ GHz) \(Channel (\d+)\)\n/", $network, $matches);

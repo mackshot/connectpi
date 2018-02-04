@@ -27,8 +27,14 @@ error_reporting(E_ALL);
 	table tr td {
 	    padding: 5px;
 	}
+	th {
+	    background-color: #999;
+	}
 	tr.even {
-	    background-color: #eee;
+	    background-color: #ddd;
+	}
+	tr.odd {
+	    background-color: #bbb;
 	}
 	textarea.console {
 	    background-color: #000;
@@ -46,14 +52,14 @@ error_reporting(E_ALL);
 	div.status {
 	    text-weight: bold;
 	}
-	div.system {
-	    text-align: right;
-	}
 	table {
 	    background-color: #fff;
 	}
 	span.devices {
 	    font-size: 90%;
+	}
+	.text-right {
+	    text-align: right;
 	}
     </style>
 </head>
@@ -107,12 +113,14 @@ error_reporting(E_ALL);
 			<?php
 			$c = 0;
 			
+			usort($scanResult, function($a, $b) { return ($a->SignalRaw < $b->SignalRaw); });
+
 			foreach ($scanResult as $network)
 			{
 			    ?>
 			    <tr class="<?php if ($c % 2 == 0) print 'even'; else print 'odd'; ?>">
 				<td><?php print $network->SSID; ?></td>
-				<td><?php print $network->Signal; ?></td>
+				<td class="text-right"><?php print $network->Signal; ?></td>
 				<td><?php print $network->Channel; ?> (<?php print $network->Freq; ?>)</td>
 				<td><?php print $network->Security ?></td>
 				<td><?php print $network->Protocol ?></td>
@@ -152,7 +160,7 @@ error_reporting(E_ALL);
 	    }
 	?>
     </div>
-    <div class="system">
+    <div class="system text-right">
 	    <button onclick="system('reboot')">Reboot</button>
 	    <button onclick="system('shutdown')">Shutdown</button>
     </div>
