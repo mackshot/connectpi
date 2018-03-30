@@ -254,7 +254,7 @@ class WlanDatabase
 
 	public function __construct()
 	{
-		$this->conn = new SQLite3('wlan.db');
+		$this->conn = new SQLite3(__DIR__ . '/wlan.db');
 		$this->conn->exec('CREATE TABLE IF NOT EXISTS network (ssid varchar(255), mode varchar(10), passphrase varchar(255))');
 	}
 

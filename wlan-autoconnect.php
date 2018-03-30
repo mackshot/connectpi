@@ -28,7 +28,6 @@ if (!empty($scanResult) && !empty($knownNetworks))
 	    if ($break) break;
 	    if ($sNetwork->Ssid == $kNetwork->Ssid && $sNetwork->Mode == $kNetwork->Mode)
 	    {
-		print_r($sNetwork);
 		$wlan->Connect($kNetwork);
 		$break = true;
 	    }
