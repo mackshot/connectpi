@@ -3,21 +3,20 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-    require 'connect.php';
-    $wlan = new Wlan('wlanE');
+require __DIR__ . '/config.php';
+$wlan = new Wlan(WLAN);
 
-    $devices = ConnectBase::GetDevices();
-    $usbDevices = ConnectBase::GetUsbDevices();
-    $usbOn = (!empty($usbDevices));
-    $usb = array();
-    if ($usbOn)
+$devices = ConnectBase::GetDevices();
+$usbDevices = ConnectBase::GetUsbDevices();
+$usbOn = (!empty($usbDevices));
+$usb = array();
+if ($usbOn)
+{
+    foreach ($usbDevices as $usbDevice)
     {
-	foreach ($usbDevices as $usbDevice)
-	{
-	    $usb[$usbDevice] = new UsbTethering($usbDevice);
-	}
+	$usb[$usbDevice] = new UsbTethering($usbDevice);
     }
-
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -78,6 +77,7 @@ error_reporting(E_ALL);
 	<div>
 	    <button onclick="window.location.href = '?action=status'">Status</button>
 	    <button onclick="window.location.href = '?action=wlan'">WLAN Search</button>
+	    <button onclick="window.location.href = '?action=wlan-list'">WLAN Known Networks</button>
 	    <?php if ($usbOn)
 	    {
 		foreach ($usb as $name => $obj)
@@ -133,14 +133,14 @@ error_reporting(E_ALL);
 			{
 			    ?>
 			    <tr class="<?php if ($c % 2 == 0) print 'even'; else print 'odd'; ?>">
-				<td><?php print $network->SSID; ?></td>
+				<td><?php print $network->Ssid; ?></td>
 				<td class="text-right"><?php print $network->Signal; ?></td>
 				<td><?php print $network->Channel; ?> (<?php print $network->Freq; ?>)</td>
 				<td><?php print $network->Security ?></td>
 				<td><?php print $network->Protocol ?></td>
 				<td><?php print $network->Speed; ?></td>
 				<td>
-				    <input type="hidden" class="ssid" value="<?php print $network->SSID; ?>"/>
+				    <input type="hidden" class="ssid" value="<?php print $network->Ssid; ?>"/>
 				    <input type="hidden" class="mode" value="<?php print $network->Mode; ?>"/>
 				    <?php
 				    if ($network->Mode == "WPA" || $network->Mode == "WEP")
@@ -163,8 +163,35 @@ error_reporting(E_ALL);
 		    break;
 		case 'wlan-connect':
 		    ?><textarea class="console" readonly="readonly"><?php
-		    print $wlan->Connect(base64_decode($_GET['ssid']), base64_decode($_GET['passphrase']), $_GET['mode']);
+		    print $wlan->Connect(new WlanNetwork(base64_decode($_GET['ssid']), $_GET['mode'], base64_decode($_GET['passphrase'])));
 		    ?></textarea><?php
+		    break;
+		case 'wlan-delete':
+		    $database = new WlanDatabase();
+		    $database->Delete(new WlanNetwork(base64_decode($_GET['ssid']), $_GET['mode'], base64_decode($_GET['passphrase'])));
+		case 'wlan-list':
+		    $database = new WlanDatabase();
+		    $c = 0;
+		    ?><table><tr><th>SSID</th><th>Mode</th><th>Passphrase</th><th></th></tr><?php foreach($database->GetAll() as $item) { $c++; ?>
+			<tr class="<?php if ($c % 2 == 0) print 'even'; else print 'odd'; ?>">
+			    <td><?php print $item->Ssid; ?><input type="hidden" class="ssid" value="<?php print $item->Ssid; ?>"/></td>
+			    <td><?php print $item->Mode; ?><input type="hidden" class="mode" value="<?php print $item->Mode; ?>"/></td>
+			    <td>
+				<span>
+				    <input type="text" readonly value="*****" />
+				    <button onclick="$(this).closest('td').find('span').toggle();">show</button>
+				</span>
+				<span style="display: none">
+				    <input class="passphrase" type="text" readonly value="<?php print $item->Passphrase; ?>" />
+				    <button onclick="$(this).closest('td').find('span').toggle();">hide</button>
+				</span>
+			    </td>
+			    <td>
+				<button class="connect">connect</button>
+				<button class="delete">delete</button>
+			    </td>
+			</tr>
+		    <?php } ?></ul><?php
 		    break;
 		case 'usb-connect':
 		    ?><textarea class="console" readonly="readonly"><?php
@@ -186,6 +213,14 @@ error_reporting(E_ALL);
 	    var mode = $(this).closest('tr').find('td input.mode').val();
 	    var passphrase = $(this).closest('tr').find('td input.passphrase').val();
 	    var url = '?action=wlan-connect&ssid=' + window.btoa(ssid) + '&mode=' + mode + '&passphrase=' + window.btoa(passphrase);
+	    window.location.href = url;
+	});
+
+	$('button.delete').on('click', function() {
+	    var ssid = $(this).closest('tr').find('td input.ssid').val();
+	    var mode = $(this).closest('tr').find('td input.mode').val();
+	    var passphrase = $(this).closest('tr').find('td input.passphrase').val();
+	    var url = '?action=wlan-delete&ssid=' + window.btoa(ssid) + '&mode=' + mode + '&passphrase=' + window.btoa(passphrase);
 	    window.location.href = url;
 	});
 

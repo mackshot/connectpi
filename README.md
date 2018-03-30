@@ -1,6 +1,6 @@
 # connectpi
 
-```apt-get install mc php hostapd dnsmasq bridge-utils```
+```apt-get install mc apache2 php hostapd dnsmasq bridge-utils php-sqlite3```
 
 ## determine mac-address of device for external usage
 ```ifconfig```
@@ -116,6 +116,13 @@ update-rc.d hostapd enable
 </Directory>
 ```
 
+## enable write rights to apache in folder to create database
+```
+chown www-data /var/www/html
+```
 
-## TODO:
-- WEP
+## crontab for autoconnect to known networks
+```
+crontab -e -u root
+*/5     *       *       *       *       /usr/bin/php /var/www/html/wlan-autoconnect.php
+```

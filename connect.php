@@ -2,9 +2,22 @@
 
 define('WPA_CONFIG', '/etc/wpa_supplicant.conf');
 
-class Network
+class WlanNetwork
 {
-	public $SSID;
+	public $Ssid;
+	public $Mode;
+	public $Passphrase;
+
+	public function __construct($ssid, $mode, $passphrase)
+	{
+		$this->Ssid = $ssid;
+		$this->Mode = $mode;
+		$this->Passphrase = $passphrase;
+	}
+}
+
+class WlanNetworkFull extends WlanNetwork
+{
 	public $Signal;
 	public $SignalRaw;
 	public $Freq;
@@ -13,11 +26,9 @@ class Network
 	public $Speed;
 	public $Channel;
 	public $Raw;
-	public $Mode;
 
 	public function __construct ($ssid, $signalRaw, $freq, $protocol, $security, $speed, $channel, $raw)
 	{
-		$this->SSID = $ssid;
 		$this->SignalRaw = $signalRaw;
 		$this->Signal = $signalRaw . "%";
 		$this->Freq = $freq;
@@ -26,12 +37,12 @@ class Network
 		$this->Speed = $speed;
 		$this->Channel = $channel;
 		$this->Raw = $raw;
+		$mode = '';
 		if (strstr($security, "WPA") !== FALSE)
-			$this->Mode = "WPA";
+			$mode = "WPA";
 		else if (strstr($security, "WEP") !== FALSE)
-			$this->Mode = "WEP";
-		else
-			$this->Mode = "";
+			$mode = "WEP";
+		parent::__construct($ssid, $mode, '');
 	}
 }
 
@@ -158,14 +169,18 @@ class Wlan extends ConnectBase
 			preg_match_all("/(\d+(.\d+)?) Mb\/s/", $substr, $matches);
 			$speed = $matches[1];
 			sort($speed);
-			$networkData[] = new Network($ssid, $signal, $freq, $protocol, implode(', ', $security), implode(', ', $speed), $channel, $network);
+			$networkData[] = new WlanNetworkFull($ssid, $signal, $freq, $protocol, implode(', ', $security), implode(', ', $speed), $channel, $network);
 		}
 		return $networkData;
 	}
 
-	public function Connect($ssid, $passphrase, $mode)
+	public function Connect(WlanNetwork $network)
 	{
 		$this->Disconnect();
+
+		$ssid = $network->Ssid;
+		$mode = $network->Mode;
+		$passphrase = $network->Passphrase;
 
 		switch ($mode)
 		{
@@ -184,6 +199,9 @@ class Wlan extends ConnectBase
 				sh_exec("wpa_supplicant -i".$this->Device." -c". WPA_CONFIG . " -Dwext -B");
 				break;
 		}
+
+		$wlanDatabase = new WlanDatabase();
+		$wlanDatabase->Insert($network);
 
 		sleep(5);
 
@@ -205,7 +223,6 @@ class Wlan extends ConnectBase
 		}
 
 		$this->ConfigureAndCheckConnection();
-
 	}
 }
 
@@ -227,6 +244,61 @@ class UsbTethering extends ConnectBase
 		$this->Disconnect();
 
 		$this->ConfigureAndCheckConnection();
+	}
+
+}
+
+class WlanDatabase
+{
+	private $conn;
+
+	public function __construct()
+	{
+		$this->conn = new SQLite3('wlan.db');
+		$this->conn->exec('CREATE TABLE IF NOT EXISTS network (ssid varchar(255), mode varchar(10), passphrase varchar(255))');
+	}
+
+	public function GetAll()
+	{
+		$query = $this->conn->query('SELECT ssid, mode, passphrase from network');
+		$results = [];
+		while ($res = $query->fetchArray(SQLITE3_ASSOC))
+			$results[] = new WlanNetwork($res['ssid'], $res['mode'], $res['passphrase']);
+		return $results;
+	}
+
+	public function Exists(WlanNetwork $network)
+	{
+		$all = $this->GetAll();
+		if (!empty($all))
+		{
+			foreach ($all as $item)
+			{
+				if ($item->Ssid == $network->Ssid && $item->Mode == $network->Mode && $item->Passphrase == $network->Passphrase)
+				    return true;
+			}
+		}
+		return false;
+	}
+
+	public function Insert(WlanNetwork $network)
+	{
+		if ($this->Exists($network))
+		    return;
+		$st = $this->conn->prepare('insert into network (ssid, mode, passphrase) values (:ssid, :mode, :passphrase)');
+		$st->bindValue(':ssid', $network->Ssid, SQLITE3_TEXT);
+		$st->bindValue(':mode', $network->Mode, SQLITE3_TEXT);
+		$st->bindValue(':passphrase', $network->Passphrase, SQLITE3_TEXT);
+		$st->execute();
+	}
+
+	public function Delete(WlanNetwork $network)
+	{
+		$st = $this->conn->prepare('delete from network where ssid = :ssid and mode = :mode and passphrase = :passphrase');
+		$st->bindValue(':ssid', $network->Ssid, SQLITE3_TEXT);
+		$st->bindValue(':mode', $network->Mode, SQLITE3_TEXT);
+		$st->bindValue(':passphrase', $network->Passphrase, SQLITE3_TEXT);
+		$st->execute();
 	}
 
 }
