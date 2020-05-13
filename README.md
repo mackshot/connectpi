@@ -7,11 +7,11 @@
 
 ## insert the following line into: /etc/udev/rules.d/10-network-device.rules
 ```SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="24:05:0f:9a:55:75", NAME="wlanE"```
+```SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="b8:27:eb:63:82:58", NAME="wlanI"```
 
 ## register bridge
 ```
 brctl addbr br0
-brctl addif br0 wlan0
 ```
 
 ## define /etc/network/interfaces
@@ -19,8 +19,8 @@ brctl addif br0 wlan0
 auto eth0
 iface eth0 inet manual
 
-auto wlan0
-iface wlan0 inet manual
+auto wlanI
+iface wlanI inet manual
 
 auto br0
 iface br0 inet static
@@ -54,7 +54,7 @@ https://www.raspberrypi.org/documentation/configuration/wireless/access-point.md
 
 ## configure hostapd: /etc/hostapd/hostapd.conf
 ```
-interface=wlan0
+interface=wlanI
 bridge=br0
 #driver=nl80211
 ssid=NetworkName
@@ -78,10 +78,10 @@ rsn_pairwise=CCMP
 
 ## add the following lines at the end of: /etc/dhcpcd.conf
 ```
-deny interfaces wlan0
+deny interfaces wlanI
 deny interfaces eth0
 
-interface wlan0
+interface wlanI
     static ip_address=192.168.222.1/24
 ```
 
