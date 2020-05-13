@@ -7,6 +7,7 @@
 
 ## insert the following line into: /etc/udev/rules.d/10-network-device.rules
 ```SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="24:05:0f:9a:55:75", NAME="wlanE"```
+
 ```SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="b8:27:eb:63:82:58", NAME="wlanI"```
 
 ## register bridge
@@ -21,6 +22,7 @@ iface eth0 inet manual
 
 auto wlanI
 iface wlanI inet manual
+wireless-power off
 
 auto br0
 iface br0 inet static
@@ -35,6 +37,7 @@ bridge_ports wlan0 eth0
 auto wlanE
 allow-hotplug wlanE
 iface wlanE inet dhcp
+wireless-power off
 
 auto usb0
 allow-hotplug usb0
@@ -78,8 +81,7 @@ rsn_pairwise=CCMP
 
 ## add the following lines at the end of: /etc/dhcpcd.conf
 ```
-deny interfaces wlanI
-deny interfaces eth0
+denyinterfaces wlanI,eth0,usb0
 
 interface wlanI
     static ip_address=192.168.222.1/24
