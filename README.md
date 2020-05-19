@@ -26,13 +26,20 @@ wireless-power off
 
 auto br0
 iface br0 inet static
-address 192.168.222.1
-netmast 255.255.255.0
-broadcast 192.168.222.255
-gateway 192.168.222.1
-network 192.168.222.0
-dns-nameservers 8.8.8.8 8.8.4.4
-bridge_ports wlan0 eth0
+  address 192.168.222.1
+  netmast 255.255.255.0
+  broadcast 192.168.222.255
+  #gateway 192.168.222.1
+  network 192.168.222.0
+  dns-nameservers 8.8.8.8 8.8.4.4
+  bridge_ports wlan0 eth0
+  up /sbin/iptables -F
+  up /sbin/iptables -X
+  up /sbin/iptables -t nat -F
+  up iptables -A FORWARD -o eth0 -i wlan0 -s 192.168.0.0/24 -m conntrack --ctstate NEW -j ACCEPT
+  up iptables -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+  up iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE 
+  up sysctl -w net.ipv4.ip_forward=1 
 
 auto wlanE
 allow-hotplug wlanE
@@ -93,16 +100,10 @@ interface=br0
   dhcp-range=192.168.222.100,192.168.222.200,255.255.255.0,24h
 ```
 
-## iptables routing
-```iptables -t nat -A POSTROUTING -s 192.168.222.0/24 ! -d 192.168.222.0/24  -j MASQUERADE```
-
 ```
 touch /etc/wpa_supplicant.conf
 chmod 777 /etc/wpa_supplicant.conf
 ```
-
-## enable routing /etc/sysctl.conf
-```net.ipv4.ip_forward=1```
 
 ## make hostapd to autorun
 ```
